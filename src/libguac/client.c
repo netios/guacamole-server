@@ -346,16 +346,54 @@ void guac_client_remove_user(guac_client* client, guac_user* user) {
 
 }
 
+void guac_client_suspend_user(guac_client* client, guac_user* user) {
+
+    guac_user_log(user, GUAC_LOG_DEBUG, "Suspending user");
+
+    /* Ensure suspend occurs at an instruction boundary */
+    guac_socket_instruction_begin(client->socket);
+    user->state = GUAC_USER_SUSPENDED;
+    guac_socket_instruction_end(client->socket);
+
+    /* Call handler, if defined */
+    if (user->suspend_handler)
+        user->suspend_handler(user);
+    else if (client->suspend_handler)
+        client->suspend_handler(user);
+
+}
+
+void guac_client_resume_user(guac_client* client, guac_user* user) {
+
+    guac_user_log(user, GUAC_LOG_DEBUG, "Resuming user");
+
+    /* Ensure resume occurs at an instruction boundary */
+    guac_socket_instruction_begin(client->socket);
+    user->state = GUAC_USER_RUNNING;
+    guac_socket_instruction_end(client->socket);
+
+    /* Call handler, if defined */
+    if (user->resume_handler)
+        user->resume_handler(user);
+    else if (client->resume_handler)
+        client->resume_handler(user);
+
+}
+
 void guac_client_foreach_user(guac_client* client, guac_user_callback* callback, void* data) {
 
     guac_user* current;
 
     pthread_mutex_lock(&(client->__users_lock));
 
-    /* Call function on each user */
+    /* Call function on each active user */
     current = client->__users;
     while (current != NULL) {
-        callback(current, data);
+
+        /* Only call callback if user is running */
+        if (current->state == GUAC_USER_RUNNING)
+            callback(current, data);
+
         current = current->__next;
     }
 

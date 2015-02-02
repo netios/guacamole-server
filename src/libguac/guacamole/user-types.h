@@ -41,5 +41,25 @@ typedef struct guac_user guac_user;
  */
 typedef struct guac_user_info guac_user_info;
 
+/**
+ * Possible current states of a Guacamole user. Currently, the only two states
+ * are GUAC_USER_RUNNING and GUAC_USER_SUSPENDED.
+ */
+typedef enum guac_user_state {
+
+    /**
+     * The state of an active user of a connection. A running user will receive
+     * broadcast instructions.
+     */
+    GUAC_USER_RUNNING,
+
+    /**
+     * The state of a user that has been temporarily removed from the broadcast
+     * pool of a connection, possibly due to excessive lag.
+     */
+    GUAC_USER_SUSPENDED
+
+} guac_user_state;
+
 #endif
 

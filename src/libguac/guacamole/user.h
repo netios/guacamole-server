@@ -99,6 +99,15 @@ struct guac_user {
     guac_socket* socket;
 
     /**
+     * The current state of the user. When the user is first allocated, this
+     * will be initialized to GUAC_USER_RUNNING. It will remain set to
+     * GUAC_USER_RUNNING unless the user is temporarily suspended via
+     * guac_client_suspend_user(), typically due to excessive lag. A suspended
+     * user will have its state set to GUAC_USER_SUSPENDED.
+     */
+    guac_user_state state;
+
+    /**
      * The unique identifier allocated for this user, which may be used within
      * the Guacamole protocol to refer to this user.  This identifier is
      * guaranteed to be unique from all existing connections and users, and
@@ -376,12 +385,48 @@ struct guac_user {
      * @code
      *     int leave_handler(guac_user* user);
      *
-     *     int my_join_handler(guac_user* user, int argv, char** argv) {
+     *     int my_leave_handler(guac_user* user, int argv, char** argv) {
      *         user->leave_handler = leave_handler;
      *     }
      * @endcode
      */
     guac_user_leave_handler* leave_handler;
+
+    /**
+     * Handler for suspend events fired by the guac_client when a guac_user
+     * is suspended.
+     *
+     * The handler takes only a guac_user which will be the guac_user that
+     * was suspended.
+     *
+     * Example:
+     * @code
+     *     int suspend_handler(guac_user* user);
+     *
+     *     int my_suspend_handler(guac_user* user, int argv, char** argv) {
+     *         user->suspend_handler = suspend_handler;
+     *     }
+     * @endcode
+     */
+    guac_user_suspend_handler* suspend_handler;
+
+    /**
+     * Handler for resume events fired by the guac_client when a suspended
+     * guac_user is resumed.
+     *
+     * The handler takes only a guac_user which will be the guac_user that
+     * was resumed.
+     *
+     * Example:
+     * @code
+     *     int resume_handler(guac_user* user);
+     *
+     *     int my_resume_handler(guac_user* user, int argv, char** argv) {
+     *         user->resume_handler = resume_handler;
+     *     }
+     * @endcode
+     */
+    guac_user_resume_handler* resume_handler;
 
 };
 

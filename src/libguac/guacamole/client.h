@@ -198,6 +198,42 @@ struct guac_client {
     guac_user_leave_handler* leave_handler;
 
     /**
+     * Handler for suspend events fired by the guac_client when a guac_user
+     * is suspended.
+     *
+     * The handler takes only a guac_user which will be the guac_user that
+     * was suspended.
+     *
+     * Example:
+     * @code
+     *     int suspend_handler(guac_user* user);
+     *
+     *     int my_suspend_handler(guac_user* user, int argv, char** argv) {
+     *         user->suspend_handler = suspend_handler;
+     *     }
+     * @endcode
+     */
+    guac_user_suspend_handler* suspend_handler;
+
+    /**
+     * Handler for resume events fired by the guac_client when a suspended
+     * guac_user is resumed.
+     *
+     * The handler takes only a guac_user which will be the guac_user that
+     * was resumed.
+     *
+     * Example:
+     * @code
+     *     int resume_handler(guac_user* user);
+     *
+     *     int my_resume_handler(guac_user* user, int argv, char** argv) {
+     *         user->resume_handler = resume_handler;
+     *     }
+     * @endcode
+     */
+    guac_user_resume_handler* resume_handler;
+
+    /**
      * NULL-terminated array of all arguments accepted by this client , in
      * order. New users will specify these arguments when they join the
      * connection, and the values of those arguments will be made available to
@@ -220,7 +256,6 @@ struct guac_client {
      *         client->args = __my_args;
      *     }
      * @endcode
-
      */
     const char** args;
 
@@ -367,15 +402,43 @@ int guac_client_add_user(guac_client* client, guac_user* user, int argc, char** 
  * Removes the given user, removing the user from the internally-tracked list
  * of connected users, and calling any appropriate leave handler.
  *
- * @param client The proxy client to return the buffer to.
+ * @param client The proxy client associated with the user being removed.
  * @param user The user to remove.
  */
 void guac_client_remove_user(guac_client* client, guac_user* user);
 
 /**
- * Calls the given function on all currently-connected users of the given
- * client. The function will be given a reference to a guac_user and the
- * specified arbitrary data.
+ * Temporarily suspends the given user, preventing them from receiving any
+ * data along the associated guac_client's broadcast socket. If the user has a
+ * defined suspend  handler, it will be called, otherwise the resume handler of
+ * the associated guac_client will be called.
+ *
+ * @param client
+ *     The proxy client associated with the user being suspended.
+ *
+ * @param user
+ *     The user to suspend.
+ */
+void guac_client_suspend_user(guac_client* client, guac_user* user);
+
+/**
+ * Resumes the given user, allowing them to again receive data along the
+ * associated guac_client's broadcast socket. If the user has a defined resume
+ * handler, it will be called, otherwise the resume handler of the associated
+ * guac_client will be called.
+ *
+ * @param client
+ *     The proxy client associated with the user being resumed.
+ *
+ * @param user
+ *     The user to resume.
+ */
+void guac_client_resume_user(guac_client* client, guac_user* user);
+
+/**
+ * Calls the given function on all currently-connected and running users of the
+ * given client. The function will be given a reference to a guac_user and the
+ * specified arbitrary data, and will not be invoked for any suspended users.
  *
  * This function is NOT reentrant. The user list MUST NOT be manipulated
  * within the same thread as a callback to this function, and the callback

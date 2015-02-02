@@ -47,6 +47,7 @@ guac_user* guac_user_alloc() {
         return NULL;
     }
 
+    user->state = GUAC_USER_RUNNING;
     user->last_received_timestamp = guac_timestamp_current();
     user->active = 1;
 

@@ -116,6 +116,18 @@ typedef int guac_user_join_handler(guac_user* user, int argc, char** argv);
 typedef int guac_user_leave_handler(guac_user* user);
 
 /**
+ * Handler for Guacamole suspend events. A suspend event is fired by the
+ * guac_client whenever a guac_user is suspended.
+ */
+typedef int guac_user_suspend_handler(guac_user* user);
+
+/**
+ * Handler for Guacamole resume events. A resume event is fired by the
+ * guac_client whenever a suspended guac_user is resumed.
+ */
+typedef int guac_user_resume_handler(guac_user* user);
+
+/**
  * Handler for Guacamole sync events. A sync event is fired by the
  * guac_client whenever a guac_user responds to a sync instruction.
  */
