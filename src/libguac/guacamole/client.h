@@ -198,6 +198,25 @@ struct guac_client {
     guac_user_leave_handler* leave_handler;
 
     /**
+     * Handler for frame events sent by the Guacamole web-client. Frame events
+     * are used to track per-user latency.
+     *
+     * The handler takes only a guac_timestamp which contains the timestamp
+     * sent to the user. Latency can be determined by comparing this timestamp
+     * against the last_sent_timestamp of guac_user.
+     *
+     * Example:
+     * @code
+     *     int frame_handler(guac_user* user, guac_timestamp timestamp);
+     *
+     *     int guac_user_init(guac_user* user, int argc, char** argv) {
+     *         user->frame_handler = frame_handler;
+     *     }
+     * @endcode
+     */
+    guac_user_frame_handler* frame_handler;
+
+    /**
      * Handler for suspend events fired by the guac_client when a guac_user
      * is suspended.
      *
@@ -453,7 +472,9 @@ void guac_client_foreach_user(guac_client* client, guac_user_callback* callback,
 /**
  * Marks the end of the current frame by sending a "sync" instruction to
  * all connected users. This instruction will contain the current timestamp.
- * The last_sent_timestamp member of guac_client will be updated accordingly.
+ * The last_sent_timestamp member of guac_client and any affected guac_user
+ * will be updated accordingly, and the frame handler of each user or the
+ * guac_client will be invoked.
  *
  * If an error occurs sending the instruction, a non-zero value is
  * returned, and guac_error is set appropriately.

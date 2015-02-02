@@ -401,11 +401,50 @@ void guac_client_foreach_user(guac_client* client, guac_user_callback* callback,
 
 }
 
+/**
+ * Updates the last-sent timestamp of the given user to the given value. The
+ * user's frame handler will also be invoked, notifying of the current latency
+ * as of this most recent frame. If no frame handler is defined, the frame
+ * handler of the client will be invoked instead.
+ *
+ * @param user
+ *     The user to update.
+ *
+ * @param data
+ *     Pointer to a guac_timestamp containing the timestamp value.
+ */
+static void __update_user_timestamp(guac_user* user, void* data) {
+
+    guac_timestamp timestamp = *((guac_timestamp*) data);
+
+    /* Update per-user timestamp */
+    user->last_sent_timestamp = timestamp;
+
+    /* Call handler, if defined */
+    if (user->frame_handler)
+        user->frame_handler(user, timestamp);
+
+    /* If per-user handler not defined, invoke at client level */
+    else {
+        guac_client* client = user->client;
+        if (client->frame_handler)
+            client->frame_handler(user, timestamp);
+    }
+
+}
+
 int guac_client_end_frame(guac_client* client) {
 
-    /* Update and send timestamp */
-    client->last_sent_timestamp = guac_timestamp_current();
-    return guac_protocol_send_sync(client->socket, client->last_sent_timestamp);
+    guac_timestamp timestamp = guac_timestamp_current();
+
+    /* Update last-sent timestamps of active users */
+    guac_client_foreach_user(client, __update_user_timestamp, &timestamp);
+
+    /* Update client-wide timestamp */
+    client->last_sent_timestamp = timestamp;
+
+    /* Send timestamp */
+    return guac_protocol_send_sync(client->socket, timestamp);
 
 }
 

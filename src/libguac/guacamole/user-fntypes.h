@@ -128,10 +128,19 @@ typedef int guac_user_suspend_handler(guac_user* user);
 typedef int guac_user_resume_handler(guac_user* user);
 
 /**
- * Handler for Guacamole sync events. A sync event is fired by the
- * guac_client whenever a guac_user responds to a sync instruction.
+ * Handler for Guacamole sync events. A sync event is fired by the guac_client
+ * whenever a guac_user responds to a sync instruction. The timestamp passed
+ * via the handler is the timestamp of the received sync instruction.
  */
 typedef int guac_user_sync_handler(guac_user* user, guac_timestamp timestamp);
+
+/**
+ * Handler for Guacamole frame events. A frame event is fired by the
+ * guac_client on a per-user basis at the end of every frame, as defined by
+ * guac_client_end_frame(). The timestamp passed via the handler is the
+ * timestamp of the sent sync instruction that denoted the end of this frame.
+ */
+typedef int guac_user_frame_handler(guac_user* user, guac_timestamp timestamp);
 
 #endif
 
