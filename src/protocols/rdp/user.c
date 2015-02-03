@@ -35,6 +35,23 @@
 
 #include <pthread.h>
 
+/**
+ * Synchronizes the remote display of the given user such that it matches the
+ * server-side display state.
+ *
+ * @param user
+ *     The user to synchronize.
+ */
+static void guac_rdp_synchronize_user(guac_user* user) {
+
+    guac_rdp_client* rdp_client = (guac_rdp_client*) user->client->data;
+
+    /* Synchronize user with display state */
+    guac_common_display_dup(rdp_client->display, user->socket);
+    guac_socket_flush(user->socket);
+
+}
+
 int guac_rdp_user_join_handler(guac_user* user, int argc, char** argv) {
 
     guac_rdp_client* rdp_client = (guac_rdp_client*) user->client->data;
@@ -61,15 +78,22 @@ int guac_rdp_user_join_handler(guac_user* user, int argc, char** argv) {
     }
 
     /* If not owner, synchronize with current display */
-    else {
-        guac_common_display_dup(rdp_client->display, user->socket);
-        guac_socket_flush(user->socket);
-    }
+    else
+        guac_rdp_synchronize_user(user);
 
-    user->mouse_handler = guac_rdp_user_mouse_handler;
-    user->key_handler = guac_rdp_user_key_handler;
-    user->size_handler = guac_rdp_user_size_handler;
+    /* General events */
+    user->mouse_handler     = guac_rdp_user_mouse_handler;
+    user->key_handler       = guac_rdp_user_key_handler;
+    user->size_handler      = guac_rdp_user_size_handler;
     user->clipboard_handler = guac_rdp_clipboard_handler;
+
+    /* User management handlers */
+    user->leave_handler     = guac_rdp_user_leave_handler;
+    user->resume_handler    = guac_rdp_user_resume_handler;
+
+    /* Frame and lag control handlers */
+    user->frame_handler = guac_rdp_user_frame_handler;
+    user->sync_handler  = guac_rdp_user_sync_handler;
 
     return 0;
 
@@ -82,5 +106,38 @@ int guac_rdp_user_leave_handler(guac_user* user) {
     guac_common_cursor_remove_user(rdp_client->display->cursor, user);
 
     return 0;
+}
+
+int guac_rdp_user_resume_handler(guac_user* user) {
+
+    /* Re-synchronize user with display state */
+    guac_rdp_synchronize_user(user);
+
+    return 0;
+
+}
+
+int guac_rdp_user_sync_handler(guac_user* user, guac_timestamp timestamp) {
+
+    /* Resume user if they are back in sync */
+    if (user->state == GUAC_USER_SUSPENDED
+            && user->last_sent_timestamp == timestamp)
+        guac_client_resume_user(user->client, user);
+
+    return 0;
+
+}
+
+int guac_rdp_user_frame_handler(guac_user* user, guac_timestamp timestamp) {
+
+    /* Calculate time difference between client and server as of last frame */
+    int lag = user->last_sent_timestamp - user->last_received_timestamp;
+
+    /* Suspend user if they have fallend out of sync */
+    if (user->state == GUAC_USER_RUNNING && lag >= GUAC_RDP_LAG_THRESHOLD)
+        guac_client_suspend_user(user->client, user);
+
+    return 0;
+
 }
 

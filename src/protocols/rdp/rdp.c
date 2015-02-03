@@ -703,7 +703,6 @@ void* guac_rdp_client_thread(void* data) {
         /* End of frame */
         guac_common_display_flush(rdp_client->display);
         guac_client_end_frame(client);
-        guac_socket_flush(client->socket);
 
     }
 

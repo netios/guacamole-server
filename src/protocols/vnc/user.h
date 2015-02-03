@@ -30,14 +30,80 @@
 #include <guacamole/user.h>
 
 /**
+ * The time to allow between sync responses in milliseconds. If a sync
+ * instruction is sent to a user and no response is received within this
+ * timeframe, the user will be suspended until a response is received.
+ */
+#define GUAC_VNC_LAG_THRESHOLD 500
+
+/**
  * Handler for joining users.
+ *
+ * @param user
+ *     The user joining the connection.
+ *
+ * @param argc
+ *     The number of arguments received from the joining user, corresponding
+ *     to the declared connection arguments.
+ *
+ * @param argv
+ *     Array of all received argument values from the joining user, each value
+ *     corresponding to the declared connection arguments.
+ *
+ * @return
+ *     Zero if the join operation succeeded, non-zero otherwise.
  */
 int guac_vnc_user_join_handler(guac_user* user, int argc, char** argv);
 
 /**
  * Handler for leaving users.
+ *
+ * @param user
+ *     The user leaving the connection.
+ *
+ * @return
+ *     Zero if the leave operation succeeded, non-zero otherwise.
  */
 int guac_vnc_user_leave_handler(guac_user* user);
+
+/**
+ * Handler for resuming users.
+ *
+ * @param user
+ *     The user being resumed
+ *
+ * @return
+ *     Zero if the resume operation succeeded, non-zero otherwise.
+ */
+int guac_vnc_user_resume_handler(guac_user* user);
+
+/**
+ * Handler called for every user sync response.
+ *
+ * @param user
+ *     The user responding to the sync.
+ *
+ * @param timestamp
+ *     The timestamp of the sync instruction received.
+ *
+ * @return
+ *     Zero if the sync was handled successfully, non-zero otherwise.
+ */
+int guac_vnc_user_sync_handler(guac_user* user, guac_timestamp timestamp);
+
+/**
+ * Handler called for every frame sent to a user.
+ *
+ * @param user
+ *     The user receiving the frame.
+ *
+ * @param timestamp
+ *     The timestamp of the end of the frame.
+ *
+ * @return
+ *     Zero if the frame was handled successfully, non-zero otherwise.
+ */
+int guac_vnc_user_frame_handler(guac_user* user, guac_timestamp timestamp);
 
 #endif
 
