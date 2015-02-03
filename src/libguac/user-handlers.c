@@ -71,18 +71,25 @@ int64_t __guac_parse_int(const char* str) {
 /* Guacamole instruction handlers */
 
 int __guac_handle_sync(guac_user* user, int argc, char** argv) {
+
+    int retval;
+
     guac_timestamp timestamp = __guac_parse_int(argv[0]);
 
     /* Error if timestamp is in future */
     if (timestamp > user->client->last_sent_timestamp)
         return -1;
 
+    /* Call handler, if defined */
+    if (user->sync_handler)
+        retval = user->sync_handler(user, timestamp);
+    else
+        retval = 0;
+
     /* Update stored timestamp */
     user->last_received_timestamp = timestamp;
 
-    if (user->sync_handler)
-        return user->sync_handler(user, timestamp);
-    return 0;
+    return retval;
 }
 
 int __guac_handle_mouse(guac_user* user, int argc, char** argv) {

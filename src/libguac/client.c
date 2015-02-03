@@ -417,9 +417,6 @@ static void __update_user_timestamp(guac_user* user, void* data) {
 
     guac_timestamp timestamp = *((guac_timestamp*) data);
 
-    /* Update per-user timestamp */
-    user->last_sent_timestamp = timestamp;
-
     /* Call handler, if defined */
     if (user->frame_handler)
         user->frame_handler(user, timestamp);
@@ -431,20 +428,30 @@ static void __update_user_timestamp(guac_user* user, void* data) {
             client->frame_handler(user, timestamp);
     }
 
+    /* Update per-user timestamp */
+    user->last_sent_timestamp = timestamp;
+
 }
 
 int guac_client_end_frame(guac_client* client) {
 
     guac_timestamp timestamp = guac_timestamp_current();
 
-    /* Update last-sent timestamps of active users */
-    guac_client_foreach_user(client, __update_user_timestamp, &timestamp);
+    /* Send timestamp */
+    int retval = guac_protocol_send_sync(client->socket, timestamp);
+    if (retval)
+        return retval;
+
+    /* Flush frame */
+    guac_socket_flush(client->socket);
 
     /* Update client-wide timestamp */
     client->last_sent_timestamp = timestamp;
 
-    /* Send timestamp */
-    return guac_protocol_send_sync(client->socket, timestamp);
+    /* Update last-sent timestamps of active users */
+    guac_client_foreach_user(client, __update_user_timestamp, &timestamp);
+
+    return retval;
 
 }
 

@@ -476,6 +476,8 @@ void guac_client_foreach_user(guac_client* client, guac_user_callback* callback,
  * will be updated accordingly, and the frame handler of each user or the
  * guac_client will be invoked.
  *
+ * This will automatically flush the client-wide broadcast socket.
+ *
  * If an error occurs sending the instruction, a non-zero value is
  * returned, and guac_error is set appropriately.
  *
